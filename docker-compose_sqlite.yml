@@ -1,0 +1,21 @@
+services:
+  web:
+    build: ./staffmanager               # папка проекта, в которой находится Dockerfile
+    # context: ./staffmanager           # папка проекта, в которой находится Dockerfile
+    # dockerfile: ./Dockerfile_cross    # по умолчанию в папке проекта, или указать путь
+    # command: bash /entrypoint.sh      # команда на запуск сервиса из entrypoint.sh, если там эта команда прописана
+    command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    environment:        # переменные окружения в явном виде
+      DATABASE: sqlite  # или postgres 
+    volumes:                              # Данные на хосте и в контейнере будут автоматически синхронизированы
+      - ./staffmanager/:/usr/src/staffmanager
+
+  # Том, в котором сохраняются данные на диске даже после остановки или удаления конетйнеров
+  # При новом запуске контейнера 
+volumes:
+ sqlite_data:
+
+# Команда на запуск из текущей папки с файлом ./docker-compose_sqlite.yml (вне проекта)
+# >>>(.venv) PS C:\.....\DjangoSynergyProject> docker-compose -f docker-compose_sqlite.yml up -d --build

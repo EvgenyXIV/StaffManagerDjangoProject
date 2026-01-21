@@ -1,0 +1,60 @@
+services:
+  # Создание образа для построения
+  web:
+    build: ./staffmanager               # папка проекта, в которой находится Dockerfile
+    # context: ./staffmanager           # папка проекта, в которой находится Dockerfile
+    # dockerfile: ./Dockerfile_cross    # по умолчанию в папке проекта, или указать путь
+    # command: bash /entrypoint.sh      # команда на запуск сервиса из entrypoint.sh, если там эта команда прописана
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:                              # Тома этого сервиса
+      - ./staffmanager/:/usr/src/staffmanager
+    ports:                                # Сопоставление портов хоста и контейнера
+      - 8000:8000
+    env_file:                             # переменные окружения из файла ".env.dev"
+      - ./.env.dev
+    
+    # environment:        # переменные окружения в явном виде
+    #   DEBUG: 1
+    #   SECRET_KEY: django-insecure-=jv8f-b_8uv8nqr!n_p30zqyf3zur$ex_v81elysd5possu6kx
+    #   DJANGO_ALLOWED_HOSTS: localhost 127.0.0.1 [::1]
+    #   POSTGRES__ENGINE: django.db.backends.postgresql
+    #   POSTGRES__DATABASE: Staff 
+    #   POSTGRES__USER: postgres
+    #   POSTGRES__PASSWORD: postgres
+    #   POSTGRES__HOST: db
+    #   POSTGRES__PORT: 5432
+    #   DATABASE: postgres
+
+    depends_on:                   # Сервиса web будет запущен, если сервис db заработал
+      db:
+        condition: service_healthy
+
+  # Построение контейнера для сервиса БД postgres
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: StaffManager
+    # POSTGRES_PORT: 5432             # 5432:5432 порты серверов postgres хоста и контейнера по-умолчанию
+    # ports:
+    #   - 5432:5432                   # ДОБАВЛЕНО: для внешнего подключения (pgAdmin)
+
+
+    healthcheck:                # Проверка рабочего состояния контейнера сервиса БД postgres
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+   
+
+# Том, в котором сохраняются данные на диске даже после остановки или удаления конетйнеров
+# Для Docker-desktop по умолчанию C:\ProgramData\docker\
+volumes:
+  postgres_data:
+
+
+  # Команда на запуск из текущей папки с файлом ./docker-compose_postgres.yml (вне проекта)
+# >>>(.venv) PS C:\.....\DjangoSynergyProject> docker-compose -f docker-compose_postgres.yml up -d --build

@@ -1,0 +1,69 @@
+# Более легкий образ для Windows
+# https://hub.docker.com/_/python
+FROM python:3.12-alpine
+FROM mcr.microsoft.com/powershell:latest
+
+# Для Windows-хоста нам не нужны системные зависимости PostgreSQL в контейнере
+# Вместо этого используем чистую установку Python
+
+# Устанавливаем рабочую директорию
+WORKDIR /staffmanager
+
+# файлы .pyc могут содержать чувствительную информацию, 
+# и их включение в образ может быть нежелательным.
+# Запрещаем их копирование
+ENV PYTHONDONTWRITEBYTECODE=1
+# Запрещаем вывод stdout stderr вместо их настройки для логирования
+# Так меньше ошибок и нет риска потери данных при удалении контейнера
+ENV PYTHONUNBUFFERED=1
+
+# Устанавливаем Python зависимости
+# Копируем requirements.txt сначала для кэширования
+COPY requirements.txt /staffmanager
+# Обновляем pip и устанавливаем зависимости
+
+RUN ["PowerShell", "pip install --upgrade", "pip"]
+
+# Параметр --no-cache-dir указывает, что кэширование не требуется
+# Это предохраняет от скачивания и установки устаревших пакетов из кэша
+RUN pip install --no-cache-dir -r requirements.txt
+
+# UNIX вариант entrypoints.sh
+# Копирование файла скрипта для подключения к базе данных
+# и созданию структуры БД по миграциям
+#COPY . /entrypoint.sh
+# Удаление знаков возврата каретки "\r" в конце строк
+#(в среде windows \r\n, в Linux толко \n)
+# Конвертация формата EOL (Windows -> Unix)
+# Get-Content — читает содержимое файла
+# Foreach-Object — обрабатывает каждую строку
+# -replace — заменяет символы
+# Set-Content — записывает изменённое содержимое обратно
+#RUN sed -i 's/\r$//g' . \entrypoint.sh # в среде Unix для совместимости после правки в Windows
+
+# Права доступа на файл entrypoint.sh в Unix
+#RUN chmod +x /usr/src/app/entrypoint.sh
+
+#Запуск скрипта entrypoint.sh в среде Windows
+#ENTRYPOINT ["bash", "&", "./entrypoint.sh"]
+
+# Копируем все файлы проекта в рабочую директорию
+COPY . /staffmanager
+
+
+# Настройка SQLite в корневой папке
+ENV DATABASE_URL=sqlite:///db.sqlite3
+
+# Entrypoint копирование файла для подключения к базе данных
+# и созданию структуры БД по миграциям и предаче управления
+COPY entrypoint.ps1 /staffmanager/entrypoint.ps1
+
+# Установка прав доступа в среде Windows для запуска скрипта
+RUN icacls /entrypoint.ps1 /grant:r Everyone:F
+
+# Коирование файлов проекта в корневую папку контейнера
+COPY . /staffmanager/
+
+# Запуск скрипта entrypoint.ps1 в среде Windows
+ENTRYPOINT ["PowerShell", "-ExecutionPolicy", "Bypass", "-File", "/staffmanager/entrypoint.ps1"]
+
