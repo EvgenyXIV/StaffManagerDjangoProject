@@ -1,2 +1,2 @@
 # DjangoSynergyProject
-ДЗ по теме Django
+Иотговый проект по теме Django
