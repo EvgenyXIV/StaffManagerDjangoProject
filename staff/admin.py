@@ -5,14 +5,51 @@ from .models import Employee, EmployeeImage, Skill, SkillLevel
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 
+# Для импорта экспорта данных из базы данных в Excel  и CSV файлы в формате CSV и XLSX
+from import_export import resources, fields
+from import_export.admin import ImportExportModelAdmin
+
+# Для добавления кастомного разрешения на изменение рабочего места у сотрудника
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth.models import Permission
+from workplaces.models import Workplace
+
+###############################################################################################################
+"""
+Так как в проекте используется 2 модели из разных приложений Employee и Workplace, 
+то для того чтобы в админке отображались права доступа у пользователей к изменению рабочего места у сотрудника, 
+надо добавить пользовательское разрешение на это.
+"""
+# Добавляем пользовательское разрешение на изменение рабочего места у сотрудника
+def add_workplace_permission():
+    # Получаем тип содержимого для модели Employee
+    content_type = ContentType.objects.get_for_model(Employee)
+    # Создаём разрешение
+    permission = Permission.objects.create(
+        codename="change_employee_workplace",
+        name="Право изменять раб.место сотрудника",
+        content_type=content_type,
+    ) # Создаём разрешение, указываем код разрешения, название разрешения и контент-тип
+    return permission
+try:
+    add_workplace_permission() # Регистрируем кастомное разрешение при загрузке приложения
+except: Exception
+#####################################################################################################################
+
 # Register your models here.
+
+# Модель для импорта/экспорта данных из базы данных в Excel  и CSV файлы в формате CSV и XLSX
+class EmployeeResource(resources.ModelResource):
+    class Meta:
+        model = Employee
+        fields = ('id', 'first_name', 'last_name', 'role', 'workplace__table')
 
 
 @admin.register(Skill)  # Регистрируем модель Skill в админке
 class SkillAdmin(admin.ModelAdmin):
     model = Skill
 
-
+# Декоратор для регистрации модели Employee в админке нужен для того чтобы модель Employee была доступна в админке
 @admin.register(SkillLevel)  # Регистрируем модель SkillLevel в админке
 class SkillLevelAdmin(admin.ModelAdmin):
     model = SkillLevel
@@ -26,7 +63,7 @@ class SkillLevelInline(admin.TabularInline):
     extra = 0
 
 
-# Регистрируем модель EmployeeImage в админке
+# Регистрируем в админке модель EmployeeImage 
 @admin.register(EmployeeImage)
 class EmployeeImageAdmin(admin.ModelAdmin):
     class Meta:
@@ -35,15 +72,15 @@ class EmployeeImageAdmin(admin.ModelAdmin):
         extra = 3
 
 
-# Регистриуем инлайн для изображений сотрудника в админке в табличном виде
+# Регистриуем  в админке инлайн для изображений сотрудника в табличном виде
 class EmployeeImageInline(admin.TabularInline):
     model = EmployeeImage
 
 
 @admin.register(
     Employee
-)  # Регистрируем модель Employee  c инлайном навык(уровень) админке
-class EmployeeAdmin(admin.ModelAdmin):
+)  # Регистрируем  в админке модель Employee  c инлайном навык(уровень) и подключённым модулем ипорта/экспорта
+class EmployeeAdmin(ImportExportModelAdmin):
 
     # Вывод всех навыков сотрудника в админке Сотрудники
     def employee_skills(self, obj):
@@ -80,6 +117,7 @@ class EmployeeAdmin(admin.ModelAdmin):
         "employment_date",
         "workplace",
         "description",
+
     )
     search_fields = ("last_name",)
     list_filter = ("skills",)
@@ -88,9 +126,8 @@ class EmployeeAdmin(admin.ModelAdmin):
 
     inlines = [SkillLevelInline, EmployeeImageInline]
 
+    resources_class = [EmployeeResource]
+
     # class Meta:
     #     model = Employee
     #     fields = '__all__'
-
-
-

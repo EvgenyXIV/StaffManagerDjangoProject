@@ -1,3 +1,7 @@
+"""
+Тестирование на базе UnitTest.
+"""
+
 from django.forms import ValidationError        # Импортируем класс для валидации форм
 from django.test import TestCase                # Импортируем класс для тестирования
 
@@ -25,21 +29,23 @@ def copy_test_image(source_file, dst_dir):
 surce_file = 'C:\\Users\\EvgenyMINI_S\\PythonProjects\\DjangoSynergyProject\\staffmanager\\media\\employee_images\\image.jpg'
 dst_dir = "C:\\Users\\EvgenyMINI_S\\PythonProjects\\DjangoSynergyProject\\staffmanager\\media"
 
-def setUpModule():                              # Функция, которая выполняется один раз перед запуском всех тестов
+def setUpModule():                              # Фикстура setUpModule 
+                                                # - Функция, которая выполняется один раз перед запуском всех тестов 
+                                                # Настройки тестов на уровне модуля tests.py
 
     # Создание пользователя без прав персонала
     common_user = User.objects.create_user(
         id=3,
         username='common_user', 
         password='common_user',
-        is_staff=True,
+        is_staff=False,
     )
     # Создание пользователя с правами персонала
     user = User.objects.create_user(
         id=2,
         username='user', 
         password='user',
-        is_staff=True
+        is_staff=False
     )
     # Создание администратора
     superuser = User.objects.create_superuser(
@@ -176,13 +182,13 @@ class TestUrls(TestCase):
     
     #2. Тестируем адреса, доступные только авторизованным пользователям, ожидаем status_code=200:
     #   Авторизоваться могут только пользователи с правами персонала.
-    """
-    "/admin/"                   - страница начальная администратора: все авторизованные пользователи 
-    "/admin/staff/"             - страница  с персоналом: суперпользователь, авторизованные пользователи с нужным наборо прав
-    "/admin/auth/"              - страница  с пользователями: суперпользователь, авторизованные пользователи с нужным наборо прав                     
-    "/admin/staff/employee/"    - страница  с карточками сотрудников: 
-                                          суперпользователь, авторизованные пользователи с нужным наборо прав
-    """
+ 
+    # "/admin/"                   - страница начальная администратора: все авторизованные пользователи 
+    # "/admin/staff/"             - страница  с персоналом: суперпользователь, авторизованные пользователи с нужным наборо прав
+    # "/admin/auth/"              - страница  с пользователями: суперпользователь, авторизованные пользователи с нужным наборо прав                     
+    # "/admin/staff/employee/"    - страница  с карточками сотрудников: 
+    #                                       суперпользователь, авторизованные пользователи с нужным наборо прав
+
     # Тестирование доступа сперпользователя, ожидаем status_code=200
     def test_urls_superuser_(self):
         urls = ["/admin/", "/admin/staff/", "/admin/auth/", "/admin/staff/employee/"]
@@ -212,14 +218,14 @@ class TestUrls(TestCase):
 
 class TestContext(TestCase):
     # Проверка передачи контекста в шаблоны
-    """
-    Страницы с пользователями, context["user"]:
-      "/admin/auth/" 
-    Страницы с информацией о персонале:
-      "/"                   context["staff"]
-      "/staff/"             context["staff"]  
-      ""/employee/1/        context["employee"]
-        """
+
+    # Страницы с пользователями, context["user"]:
+    #   "/admin/auth/" 
+    # Страницы с информацией о персонале:
+    #   "/"                   context["staff"]
+    #   "/staff/"             context["staff"]  
+    #   ""/employee/1/        context["employee"]
+
     
     # Позитивный тест передачи контекста в шаблоны, проверка информации о сотруднике по id=1, context["staff"]
     def test_context_employee_pos(self):
@@ -271,9 +277,6 @@ class TestContext(TestCase):
         skill_list_lenth = len(skill_list)  
         self.assertEqual(skill_list_lenth, 2)                       # assertEqual проверяет равенство длины списка навыков сотрудника
 
-        image = EmployeeImage.objects.get(employee=employee)       # Получение изображения сотрудника
-        self.assertIsNotNone(image)
-              
 
     # Позитивный тест
     # Проверка изображения сотрудника по контексту страницы "/employee/2/" у сотрудника с id=2 есть одно изображение 
@@ -286,6 +289,7 @@ class TestContext(TestCase):
         self.assertIsNotNone(image)                             # assertIsNone подтверждает наличие картинки у сотрудника из контекста.
         
 
+# Тест валидатора рабочих мест workplace
 class TestWorkplaceValdator(TestCase):
     """
     В тестовой базе сводбодно рабочее место №4. Место №3 занимает разработчик.

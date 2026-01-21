@@ -1,3 +1,4 @@
+from django.apps import AppConfig
 from django.db import models
 from django.contrib.auth.models import User  # Импортируем модель User
 
@@ -14,15 +15,18 @@ from django_ckeditor_5.fields import (
 )
 from PIL import Image as PILImage  # Импортируем класс Image из библиотеки PIL
 
-from datetime import date # Импортируем класс date для расчёта стажа
+from datetime import date  # Импортируем класс date для расчёта стажа
 
-from django.core.exceptions import ValidationError # Импортируем класс ValidationError для создания валидатора
+from django.core.exceptions import (
+    ValidationError,
+)  # Импортируем класс ValidationError для создания валидатора
 
 # Create your models here.
 
 
- 
 class Skill(models.Model):  # Класс Навык наследник базовой модели Model
+    AppConfig.default = False # Для отключения автоматического поиска модели в проекте
+
     name = models.CharField(max_length=100)
     # Поле описания навыка (по желанию)
     description = CKEditor5Field(blank=True, null=True)
@@ -37,15 +41,16 @@ class Skill(models.Model):  # Класс Навык наследник базо�
 
 
 class Employee(models.Model):  # Класс Сотрудник наследник базовой модели Model
+    AppConfig.default = False # Для отключения автоматического поиска модели в проекте
 
     # Список ролей сотрудников
     ROLES = (
-        ('frontend-developer','фронтенд разработчик'),
-        ('backend-developer','бэкенд разработчик'), 
-        ('qa-engineer', 'тестировщик'), 
-        ('project-manager','руководитель проекта'), 
-        ('prompt engineer', 'промпт-инженер'),
-        ('other', 'другое'),
+        ("frontend-developer", "фронтенд разработчик"),
+        ("backend-developer", "бэкенд разработчик"),
+        ("qa-engineer", "тестировщик"),
+        ("project-manager", "руководитель проекта"),
+        ("prompt engineer", "промпт-инженер"),
+        ("other", "другое"),
     )
     # Расширение модели User через связь с моделью User один к одному
     user = models.OneToOneField(
@@ -69,12 +74,17 @@ class Employee(models.Model):  # Класс Сотрудник наследни�
         max_length=100, verbose_name="Отчество", blank=True, null=True
     )
     # Роль сотрудника
-    role = models.CharField(choices=ROLES, verbose_name="Роль", default='other', blank=True, null=True)
+    role = models.CharField(
+        choices=ROLES, verbose_name="Роль", default="other", blank=True, null=True
+    )
     # Дата приёма на работу
-    employment_date = models.DateField(verbose_name="Дата приёма на работу", blank=True, null=True)
+    employment_date = models.DateField(
+        verbose_name="Дата приёма на работу", blank=True, null=True
+    )
     # Стаж в днях
-    employment_days = models.PositiveIntegerField(verbose_name="Стаж в днях", blank=True, null=True, default=0, editable=False)
-
+    employment_days = models.PositiveIntegerField(
+        verbose_name="Стаж в днях", blank=True, null=True, default=0, editable=False
+    )
 
     # Связь с моделью Skill многие ко многим через модель SkillLevel
     skills = models.ManyToManyField(Skill, through="SkillLevel")
@@ -92,41 +102,58 @@ class Employee(models.Model):  # Класс Сотрудник наследни�
     description = CKEditor5Field(blank=True, null=True)
 
     # Метод для расчёта стажа
-    def save(self, *args, **qkwargs):   # Переопределяем метод сохранения
-        if self.employment_date:        # Если дата приёма на работу заполнена
-            today = date.today() # Получаем текущую дату
-            days = today - self.employment_date # Рассчитываем стаж
-            self.employment_days = days.days    # Записываем стаж в поле employment_days в днях
+    def save(self, *args, **qkwargs):  # Переопределяем метод сохранения
+        if self.employment_date:  # Если дата приёма на работу заполнена
+            today = date.today()  # Получаем текущую дату
+            days = today - self.employment_date  # Рассчитываем стаж
+            self.employment_days = (
+                days.days
+            )  # Записываем стаж в поле employment_days в днях
         self.full_clean()  # Проверяем валидность модели перед сохранением
         super().save(*args, **qkwargs)  # Продолжаем сохранять базовым методом модели
 
+    
     # Переопределяем метод валидации
     def clean(self):
         self.validate_workplace()  # Вызываем метод валидации рабочего места
 
     # Метод для валидации рабочего места
     def validate_workplace(self):
-        place = self.workplace.table # Получаем номер рабочего места
-        neighbour_workplaces = [place - 1, place + 1] # Соседние рабочие места
-        neighbours = Employee.objects.filter(workplace__table__in=neighbour_workplaces)    # Сотрудники на соседних рабочих местах
+        place = self.workplace.table  # Получаем номер рабочего места
+        neighbour_workplaces = [place - 1, place + 1]  # Соседние рабочие места
+        neighbours = Employee.objects.filter(
+            workplace__table__in=neighbour_workplaces
+        )  # Сотрудники на соседних рабочих местах
         if self.role == "qa-engineer":  # Если сотрудник тестировщик
-            for neighbour in neighbours:    
-                if neighbour.role == "frontend-developer":    # Если соседний сотрудник фронтенд разработчик
-                    raise ValidationError(f"Сосед {neighbour} {neighbour.role} место № {neighbour.workplace} Нельзя размещать разработчиков и тестировщиков рядом")
-                elif neighbour.role == "backend-developer":  # Если соседний сотрудник бэкенд разработчик
-                    raise ValidationError(f"Сосед {neighbour} {neighbour.role} место № {neighbour.workplace} Нельзя размещать разработчиков и тестировщиков рядом")
-        if self.role == "frontend-developer" or self.role == "backend-developer":  # Если сотрудник разработчик
-            for neighbour in neighbours:    
-                if neighbour.role == "qa-engineer":    # Если соседний сотрудник тестировщик
-                    raise ValidationError(f"Сосед {neighbour} {neighbour.role} место № {neighbour.workplace} Нельзя размещать разработчиков и тестировщиков рядом")
-                
-                        
+            for neighbour in neighbours:
+                if (
+                    neighbour.role == "frontend-developer"
+                ):  # Если соседний сотрудник фронтенд разработчик
+                    raise ValidationError(
+                        f"Сосед {neighbour} {neighbour.role} место № {neighbour.workplace} Нельзя размещать разработчиков и тестировщиков рядом"
+                    )
+                elif (
+                    neighbour.role == "backend-developer"
+                ):  # Если соседний сотрудник бэкенд разработчик
+                    raise ValidationError(
+                        f"Сосед {neighbour} {neighbour.role} место № {neighbour.workplace} Нельзя размещать разработчиков и тестировщиков рядом"
+                    )
+        if (
+            self.role == "frontend-developer" or self.role == "backend-developer"
+        ):  # Если сотрудник разработчик
+            for neighbour in neighbours:
+                if (
+                    neighbour.role == "qa-engineer"
+                ):  # Если соседний сотрудник тестировщик
+                    raise ValidationError(
+                        f"Сосед {neighbour} {neighbour.role} место № {neighbour.workplace} Нельзя размещать разработчиков и тестировщиков рядом"
+                    )
 
     # Добавляем читабельность в админке
     class Meta:
         verbose_name = "Сотрудник"
         verbose_name_plural = "Сотрудники"
-        ordering = ['-employment_days']
+        ordering = ["-employment_days"]
 
     # В заголовке карточки сотрудника вместо Employee object() будет имя и фамилия
     def __str__(self):
@@ -135,6 +162,8 @@ class Employee(models.Model):  # Класс Сотрудник наследни�
 
 # Связь сотрудник/навык многие ко многим через модель SkillLevel
 class SkillLevel(models.Model):  # Класс Уровень Навыка наследник базовой модели Model
+    AppConfig.default = False # Для отключения автоматического поиска модели в проекте
+
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
     skill = models.ForeignKey(Skill, on_delete=models.CASCADE)
     level = models.IntegerField(
@@ -156,8 +185,10 @@ class SkillLevel(models.Model):  # Класс Уровень Навыка нас
 
 # Создание модели для хранения изображений с отношением многие к одному (ForeignKey)
 class EmployeeImage(models.Model):
+    AppConfig.default = False # Для отключения автоматического поиска модели в проекте
+
     employee = models.ForeignKey(
-        Employee, on_delete=models.CASCADE, related_name="employee_gallery" #
+        Employee, on_delete=models.CASCADE, related_name="employee_gallery"
     )
     image = models.ImageField(
         upload_to="employee_images/", blank=False, null=True, verbose_name="Изображение"
@@ -169,7 +200,6 @@ class EmployeeImage(models.Model):
 
     class Meta:
         ordering = ["order"]  # Сортируем изображения по порядку
-
 
     # Переопределяем метод сохранения изображения (Pillow)
     def save(self, *args, **kwargs):
@@ -191,10 +221,8 @@ class EmployeeImage(models.Model):
             img.save(self.image.path)  # Сохраняем изменённое изображение
             return self.image
 
-
     def __str__(self):
         if self.is_main:
             return f"Основное изображение для {self.employee} - {self.image.name}"
         else:
             return f"Дополнительное изображение для {self.employee}"
-
