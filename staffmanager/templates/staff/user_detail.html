@@ -1,0 +1,12 @@
+<!-- НАСЛЕДНИК ШАБЛОНА base.html -->
+{% extends "base.html" %}
+{% block content %}
+    <meta charset="UTF-8">
+    <h1>ПОДРОБНОСТИ О ПОЛЬЗОВАТЕЛЕ</h1>
+        <h2>
+        {% include 'includes/user_header.html' %} <!--всё содержание блока header вынесли в отдельный файл 
+                                                        staffmanager\templates\includes\user_header.html-->   
+   
+        </h2>
+
+{% endblock %}

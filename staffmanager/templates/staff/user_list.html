@@ -1,0 +1,22 @@
+<!-- НАСЛЕДНИК ШАБЛОНА base.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<body>
+    <meta charset="UTF-8">
+    <h1>ГЛАВНАЯ СТРАНИЦА.</h1>
+    <h2>Список пользователей ({{ object_list|length }}):</h2>
+    {{ object_list }}
+            <ul>                                             
+                {% for user in object_list %}    <!-- teg for Вывод неупорядоченного (ul) маркированного (по умолчанию) списка -->
+                <li>
+                    {% include 'includes/user_card.html' %} <!--    всё содержание цикла for вынесли в отдельный файл 
+                                                                staffmanager\templates\includes\user_card.html -->             
+                </li>
+                    {% empty %}        <!-- тег % empty % - для вывода сообщения при запрошенном в цикле пустом или не найденном массиве -->
+                <li>Список пользователей пустой</li>
+                {% endfor %}
+            </ul>
+
+</body>
+{% endblock %}
