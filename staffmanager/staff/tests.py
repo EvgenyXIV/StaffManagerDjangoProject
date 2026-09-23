@@ -1,5 +1,13 @@
 """
 Тестирование на базе UnitTest.
+Запуск тестов из корня проекта, вирт.окружение активировано:
+- без подробностей
+Bash
+py -m manage test
+- подробный вывод
+Bash
+py -m manage test -v 2
+
 """
 
 from django.forms import ValidationError        # Импортируем класс для валидации форм
@@ -255,7 +263,7 @@ class TestContext(TestCase):
     
     # Позитивный тест проверки контекста для страницы "/" на число сотрудников, 
     # информация о которых есть в контексте, context["staff"]. У нас 3 сотрудника.
-    def test_context_employee_neg(self):
+    def test_context_employees_quantity_pos(self):
         self.client.login(username='admin', password='admin')   # Авторизация в системе 
         url = "/"                                               # Проверка контекста для страницы "/", context["staff"]
         context = self.client.get(url).context                  # Получение контекста из ответа сервера
@@ -289,15 +297,15 @@ class TestContext(TestCase):
         self.assertIsNotNone(image)                             # assertIsNone подтверждает наличие картинки у сотрудника из контекста.
         
 
-# Тест валидатора рабочих мест workplace
+# Тест валидатора рабочих мест workplace негативный
 class TestWorkplaceValdator(TestCase):
     """
-    В тестовой базе сводбодно рабочее место №4. Место №3 занимает разработчик.
+    В тестовой базе свободно рабочее место №4. Место №3 занимает разработчик.
     Проверим работу валидатора, создавая на рабочем месте №4 сотрудника-тестировщика (должна быть ошибка валидации) 
     и сотрудника-разработчика (валидация должна быть успешной).
     """
     
-    def test_workplace_validator(self):
+    def test_workplace_validator_neg(self):
 
         # Создание тестового пользователя с id=4
         User.objects.create(
@@ -306,7 +314,7 @@ class TestWorkplaceValdator(TestCase):
             password="test",
             is_staff=True,
         )
-        # Создание тестового сорудника с user id=4 на рабочем месте №4
+        # Создание тестового сотрудника с user id=4 на рабочем месте №4
         test_employee = Employee.objects.create(
             user_id=4,
             first_name="test",
@@ -314,7 +322,7 @@ class TestWorkplaceValdator(TestCase):
             gender="male",
             workplace=Workplace.objects.get(id=4),
             )
-        # На рабочем месте №3 сидит bacend-developer.
+        # На рабочем месте №3 сидит backend-developer.
         # Назначаем тестовому сотруднику роль разработчика frontend-engineer.
         # Валидация должна проходить успешно
         Employee.objects.filter(id=4).update(role='frontend-developer')
@@ -334,7 +342,7 @@ class TestWorkplaceValdator(TestCase):
             employee.full_clean()                   # Проверка валидации
         # Проверка assertIn того, что сообщение об ошибке валидации именно рабочего места workplace.
         self.assertIn("Нельзя размещать разработчиков и тестировщиков рядом", str(mistake.exception)) 
-        print(str(mistake.exception))      
+        #print(str(mistake.exception))
         
 
             

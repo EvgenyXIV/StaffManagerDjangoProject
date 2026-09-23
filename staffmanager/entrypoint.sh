@@ -55,7 +55,7 @@ create_db() {
     if PGPASSWORD="$SQL_PASSWORD" psql -h "$SQL_HOST" -U "$SQL_USER" -c "SELECT 1 FROM pg_database WHERE datname = '$SQL_DATABASE'" | grep -q 1; then
         echo "База данных ", $SQL_DATABASE, " уже существует"
     else
-        PGPASSWORD="$SQL_PASSWORD" psql -h "$SQL_HOST" -U "$SQL_USER" -c "CREATE DATABASE '$SQL_DATABASE'"
+        PGPASSWORD="$SQL_PASSWORD" psql -h "$SQL_HOST" -U "$SQL_USER" -c "CREATE DATABASE $SQL_DATABASE"
         if [ $? -eq 0 ]; then
             echo "База данных ", $SQL_DATABASE, " успешно создана"
         else

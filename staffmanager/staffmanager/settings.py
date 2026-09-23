@@ -28,12 +28,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-=jv8f-b_8uv8nqr!n_p30zqyf3zur$ex_v81elysd5possu6kx"
+SECRET_KEY = os.getenv("SECRET_KEY", "your_django_secret_key")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Для production в настройках окружения указать DEBUG=0
+DEBUG = os.getenv("DEBUG", "1") == "1"  # В результате DEBUG или True, или False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost 127.0.0.1").split()
 
 # 1. Добавляем константу для DjDT, чтобы он понимал - запросы с каких IP адресов надо обрабатывать
 INTERNAL_IPS = [
@@ -201,37 +202,27 @@ WSGI_APPLICATION = "staffmanager.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 # 
-""" Комитим, если база postgres. Запуск docker-compose_sqlite.yml"""
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+""" Если база postgres. Запуск docker-compose_postgres.yml"""
+if os.getenv('DATABASE') == 'postgres':
+    DATABASES = {
+        'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('SQL_DATABASE', 'StaffManager'),
+        'USER': os.getenv('SQL_USER', 'postgres'),
+        'PASSWORD': os.getenv('SQL_PASSWORD', 'postgres'),
+        'HOST': os.getenv('SQL_HOST', 'db'),  # Имя контейнера с БД db, использовать вместо localhost при развертывании в Docker
+        'PORT': os.getenv('SQL_PORT', '5432'),
+        }
     }
-}
-# # Если при запуске контейнера в переменных окружениях будет 
-# # указан параметр DATABASE=postgres, то будет подключаться к БД Postgres
-# if os.getenv('DATABASE') == 'postgres':
-#     DATABASES['default'] = {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': os.getenv('SQL_DATABASE', 'StaffManager'),
-#         'USER': os.getenv('SQL_USER', 'postgres'),
-#         'PASSWORD': os.getenv('SQL_PASSWORD', 'postgres'),
-#         'HOST': os.getenv('SQL_HOST', 'db'),  # Имя контейнера с БД db, использовать вместо localhost при развертывании в Docker
-#         'PORT': os.getenv('SQL_PORT', '5432'),
-#     }
+    """ Если база sqlite3. Запуск docker-compose_postgres.yml"""
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
-""" Комитим, если база sqlite3. Запуск docker-compose_postgres.yml"""
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'StaffManager',
-#         'USER': 'postgres',
-#         'PASSWORD': 'postgres',
-#         # 'HOST': 'localhost',
-#         'HOST': 'db',                       # Имя контейнера с БД db, использовать вместо localhost при развертывании в Docker
-#         'PORT': '5432',
-#         }
-# }
 
 # Определим конфигурацию CKEditor-5: включаем режим полного набора инструментов и настраиваем высоту редактора
 CKEDITOR_5_CONFIGS = {

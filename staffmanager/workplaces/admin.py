@@ -5,7 +5,7 @@ from staff.models import Employee
 # Register your models here.
 
 
-# Назначаем рабочие места прямо в фоме сотрудника
+# Назначаем рабочие места прямо в форме сотрудника
 class EmployeeInline(admin.StackedInline):
     model = Employee
     extra = 0
@@ -22,7 +22,7 @@ class WorkplaceAdmin(admin.ModelAdmin):
     def employee_at_table(self, obj):
         if Employee.objects.filter(workplace_id=obj.id): # Проверяем наличие сотрудника на рабочем месте
             employee = Employee.objects.filter(workplace_id=obj.id) # Получаем список сотрудников (он может быть только один)
-            return f"Сотрудник: {employee[0]}" # Возвращаем сотрудника
+            return f"Сотрудник: {employee[0]}, {employee[0].role}" # Возвращаем сотрудника
         else:
             return "Рабочее место свободно" # Возвращаем сообщение о том, что рабочее место свободно
     
