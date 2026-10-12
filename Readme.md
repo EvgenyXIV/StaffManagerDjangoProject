@@ -1000,7 +1000,7 @@ employee.employment_days }}
 7. Подробная карточка сотрудника
    Добавьте в контекст и разместите в шаблоне главное изображение сотрудника.
 
-Для вывода главного изображения сотрудника (CBV класс ass EmployeeDetailView(LoginRequiredMixin, DetailView)):
+Для вывода главного изображения сотрудника (CBV класс class EmployeeDetailView(LoginRequiredMixin, DetailView)):
 
 - методом .get(is_main=True)  получаем главное изображение сотрудника
 - сохраняем его в контекст-объекте context['main_image']. Оно у сотрудника единственное (если есть)
