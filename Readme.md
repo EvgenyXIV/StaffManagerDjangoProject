@@ -1861,7 +1861,7 @@ https://www.docker.com/products/docker-desktop/
 os.environ.get('NAME')
 
 DEBUG=1
-SECRET_KEY=django-insecure-=jv8f-b_8uv8nqr!n_p30zqyf3zur$ex_v81elysd5possu6kx
+SECRET_KEY=django-insecure**************************************
 DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
 SQL_ENGINE=django.db.backends.postgresql
 SQL_DATABASE=StaffManager
@@ -1983,7 +1983,7 @@ docker-compose_...yml для настройки переменных окруж�
 os.environ.get('NAME')
 
 DEBUG=1
-SECRET_KEY=django-insecure-=jv8f-b_8uv8nqr!n_p30zqyf3zur$ex_v81elysd5possu6kx
+SECRET_KEY=django-insecure**************************************
 DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
 SQL_ENGINE=django.db.backends.postgresql
 SQL_DATABASE=StaffManager
